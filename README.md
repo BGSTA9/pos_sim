@@ -8,6 +8,11 @@ from
 > Principles of Remote-PPG"*, IEEE Trans. Biomed. Eng. **64**(7),
 > pp. 1479-1491, 2017. doi:[10.1109/TBME.2016.2609282](https://doi.org/10.1109/TBME.2016.2609282)
 
+> **Not an engineer?** Read [STORY.md](STORY.md) for a plain-English
+> walkthrough of the same project, then come back here for the math.
+> The pipeline at a glance lives in
+> [figures/architecture.png](figures/architecture.png).
+
 The pipeline is end-to-end:
 
 1. **`SyntheticDataGenerator`** — builds a physically-grounded RGB trace
@@ -248,9 +253,17 @@ pos_sim/
 │   └── analyzer.py       # Class 3: Butterworth + FFT/Welch + BPM
 ├── notebooks/
 │   └── demonstration.ipynb
+├── scripts/
+│   └── make_architecture.py   # builds figures/architecture.png
+├── figures/
+│   ├── architecture.png       # the pipeline diagram
+│   ├── fig1_raw_rgb.png
+│   ├── fig2_recovered_pulse.png
+│   └── fig3_spectrum.png
 ├── main.py               # standalone CLI entry point
 ├── requirements.txt
-└── README.md             # ← you are here
+├── STORY.md              # plain-English explainer (no math required)
+└── README.md             # ← you are here (technical reference)
 ```
 
 ---
