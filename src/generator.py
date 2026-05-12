@@ -1,9 +1,9 @@
-"""Physics-based synthetic RGB trace generator for rPPG validation.
+"""Physics-based synthetic ROI-RGB trace generator for rPPG validation.
 
-Implements the dichromatic skin-reflection model from Wang et al. (2017),
-Eq. (6):
+Implements the dichromatic skin-reflection model,
+Eq. (6) in the paper - The Final Linear Mixture Model.
 
-    C(t) = I0 * (1 + i(t)) * (u_c * c0 + u_s * s(t) + u_p * p(t)) + v_n(t)
+    C_k(t) = I0 * (1 + i(t)) * (u_c * c0 + u_s * s(t) + u_p * p(t)) + v_n(t)
 
 where
     I0         scalar stationary luminance,
@@ -14,6 +14,8 @@ where
     u_p        relative pulsatile strengths in RGB (blood-volume pulse vector),
     p(t)       zero-mean cardiac pulse signal,
     v_n(t)     additive white Gaussian sensor / quantization noise.
+
+Note: 
 
 The output is the spatially-averaged RGB trace (N x 3 array) that one would
 measure from a face ROI in a video. This is the "raw input" that the POS
@@ -42,27 +44,19 @@ import numpy as np
 
 @dataclass
 class SyntheticDataGenerator:
-    """Generate an N x 3 RGB trace from the dichromatic reflection model.
+    """Generate an N x 3 RGB trace using the dichromatic reflection model.
 
     Parameters
     ----------
-    fs : float
-        Sampling frequency in Hz (camera frame rate). Default 30.
-    duration_s : float
-        Total trace length in seconds. Default 30.
-    pulse_bpm : float
-        Ground-truth heart rate in beats per minute. Default 72 (1.2 Hz).
-    I0 : float
-        Stationary luminance level. Acts as global scale; default 100.
-    u_c : np.ndarray
-        Unit-ish skin-tone vector [R, G, B]. Will NOT be re-normalized so the
-        caller can encode realistic intensity differences across channels.
-    u_s : np.ndarray
-        Unit specular color vector [R, G, B]. Default white light.
-    u_p : np.ndarray
-        Blood-volume pulse vector [R, G, B] (G > B > R by default).
-    c0 : float
-        Stationary skin reflection strength (multiplier on u_c).
+    fs : Sampling frequency in Hz (camera frame rate). Default 30.
+    duration_s : Total trace length in seconds. Default 30.
+    pulse_bpm : Ground-truth heart rate in beats per minute. Default 72 (1.2 Hz).
+    I0 : Stationary luminance level. Acts as global scale; default 100.
+    u_c : Unit-ish skin-tone vector [R, G, B]. Will NOT be re-normalized so the 
+    caller can encode realistic intensity differences across channels.
+    u_s : Unit specular color vector [R, G, B]. Default white light.
+    u_p : Blood-volume pulse vector [R, G, B] (G > B > R by default).
+    c0 : Stationary skin reflection strength (multiplier on u_c).
     pulse_amplitude : float
         Peak amplitude of the unit-less pulse signal p(t). Sub-1% modulation
         is realistic for true PPG; we use 0.01 by default.

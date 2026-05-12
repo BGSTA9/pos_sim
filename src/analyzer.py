@@ -57,7 +57,6 @@ class SignalAnalyzer:
             btype="bandpass",
         )
 
-
     # ╔══════════════════════════════════════════════════════════════════╗
     # ║                          Filtering stage                         ║
     # ╚══════════════════════════════════════════════════════════════════╝
@@ -104,7 +103,6 @@ class SignalAnalyzer:
         )
         return freqs, psd
 
-
     # ╔══════════════════════════════════════════════════════════════════╗
     # ║                     Peak picking stage                           ║
     # ╚══════════════════════════════════════════════════════════════════╝
@@ -148,7 +146,7 @@ class SignalAnalyzer:
 
         Returns
         -------
-        dict with keys 'bpm', 'peak_hz', 'peak_power', 'freqs', 'spectrum'.
+        'dict' with keys 'bpm', 'peak_hz', 'peak_power', 'freqs', 'spectrum'.
         """
         lo = self.low_hz if search_low_hz is None else search_low_hz
         hi = self.high_hz if search_high_hz is None else search_high_hz
@@ -191,9 +189,9 @@ class SignalAnalyzer:
             "interp_delta_bins": float(delta),
         }
 
-    # ------------------------------------------------------------------
-    # Validation helper
-    # ------------------------------------------------------------------
+    # ╔══════════════════════════════════════════════════════════════════╗
+    # ║                      Validation helper                           ║
+    # ╚══════════════════════════════════════════════════════════════════╝
 
     @staticmethod
     def compare_to_ground_truth(estimated_bpm: float, true_bpm: float) -> dict:
