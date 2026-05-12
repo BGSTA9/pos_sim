@@ -2,12 +2,14 @@
 
 This module is the "grader": it takes the raw POS pulse signal H(t),
 band-passes it to the physiological heart-rate band, and reads off the
-dominant frequency via FFT and Welch's PSD.
+dominant frequency via Fast Fourier Transform (FFT) or Welch's method 
+(Power Spectral Density).
 
-Cutoffs
--------
-The default 0.7-4.0 Hz band corresponds to 42-240 BPM (per the prompt),
+The cutoff frequencies defaulted to 0.7 Hz (42 BPM) and 4.0 Hz (240 BPM), 
 which spans rest, exercise, infants and the recovery transient.
+
+The validation is via comparing the extracted BPM to the ground-truth 
+72 BPM from the `SyntheticDataGenerator`.
 """
 
 from __future__ import annotations
@@ -21,21 +23,19 @@ from scipy.signal import butter, filtfilt, welch
 
 @dataclass
 class SignalAnalyzer:
+    
     """Band-pass, FFT/Welch, BPM peak picking, ground-truth comparison.
 
     Parameters
     ----------
-    fs : float
-        Sampling rate of the input signal (Hz).
-    low_hz, high_hz : float
-        Butterworth bandpass cutoffs in Hz. Default 0.7 Hz (42 BPM) to
-        4.0 Hz (240 BPM).
-    order : int
-        Order per direction of the Butterworth filter. `filtfilt` applies it
-        twice (zero-phase), so effective order is 2 * `order`. Default 4.
-    welch_seconds : float
-        Welch segment length in seconds. Longer = finer frequency resolution
-        but fewer averages. Default 8 s.
+    -> fs : Sampling rate of the input signal (Hz).
+    -> low_hz, high_hz : Butterworth bandpass cutoffs in Hz. Default 0.7 Hz (42 BPM) 
+    to 4.0 Hz (240 BPM).
+    -> order : Order per direction of the Butterworth filter. `filtfilt` applies 
+    it twice (zero-phase), so effective order is 2 * `order`. Default 4.
+    -> welch_seconds :  Welch segment length in seconds. Longer = finer frequency 
+    resolution but fewer averages. Default 8 s.
+    
     """
 
     fs: float
@@ -44,7 +44,7 @@ class SignalAnalyzer:
     order: int = 4
     welch_seconds: float = 8.0
 
-    def __post_init__(self) -> None:
+    def __post_init__(self) -> None: 
         nyq = 0.5 * self.fs
         if not (0 < self.low_hz < self.high_hz < nyq):
             raise ValueError(
@@ -57,9 +57,10 @@ class SignalAnalyzer:
             btype="bandpass",
         )
 
-    # ------------------------------------------------------------------
-    # Filtering
-    # ------------------------------------------------------------------
+
+    # ╔══════════════════════════════════════════════════════════════════╗
+    # ║                          Filtering stage                         ║
+    # ╚══════════════════════════════════════════════════════════════════╝
 
     def bandpass(self, x: np.ndarray) -> np.ndarray:
         """Zero-phase Butterworth bandpass via `scipy.signal.filtfilt`."""
@@ -68,10 +69,11 @@ class SignalAnalyzer:
         padlen = min(3 * max(len(self._a), len(self._b)), len(x) - 1)
         return filtfilt(self._b, self._a, x, padlen=padlen)
 
-    # ------------------------------------------------------------------
-    # Spectral analysis
-    # ------------------------------------------------------------------
-
+    # ╔══════════════════════════════════════════════════════════════════╗
+    # ║                     Spectral Analysis stage                      ║
+    # ╚══════════════════════════════════════════════════════════════════╝
+    
+    #Fast Fourier Transform (FFT)
     def fft_spectrum(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """One-sided magnitude spectrum.
 
@@ -79,12 +81,14 @@ class SignalAnalyzer:
         """
         x = np.asarray(x, dtype=float)
         N = x.shape[0]
+        
         # Hann-window first to leak less into neighbouring bins.
         w = np.hanning(N)
         X = np.fft.rfft(x * w)
         freqs = np.fft.rfftfreq(N, d=1.0 / self.fs)
         return freqs, np.abs(X)
 
+    # Welch's method (Power Spectral Density)
     def welch_psd(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Welch's PSD with a `welch_seconds`-long Hann segment, 50% overlap."""
         x = np.asarray(x, dtype=float)
@@ -100,17 +104,19 @@ class SignalAnalyzer:
         )
         return freqs, psd
 
-    # ------------------------------------------------------------------
-    # Peak picking
-    # ------------------------------------------------------------------
 
+    # ╔══════════════════════════════════════════════════════════════════╗
+    # ║                     Peak picking stage                           ║
+    # ╚══════════════════════════════════════════════════════════════════╝
+    
     @staticmethod
     def _parabolic_interp(y_m1: float, y_0: float, y_p1: float) -> float:
         """Quadratic peak interpolation around 3 equispaced samples.
 
         Given y[k-1], y[k], y[k+1] with y[k] the maximum, returns the
         sub-bin offset `delta` in (-0.5, 0.5) of the true peak relative to k.
-        Standard textbook trick (Smith, "Spectral Audio Signal Processing").
+        
+        A Standard textbook trick (Smith, "Spectral Audio Signal Processing").
         """
         denom = (y_m1 - 2.0 * y_0 + y_p1)
         if denom == 0.0:
