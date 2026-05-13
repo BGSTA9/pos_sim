@@ -3,12 +3,15 @@
 Implements the dichromatic skin-reflection model,
 Eq. (6) in the paper - The Final Linear Mixture Model.
 
-    C_k(t) = I0 * (1 + i(t)) * (u_c * c0 + u_s * s(t) + u_p * p(t)) + v_n(t)
+    C_k(t) = I0 * (1 + i(t)) * (u_c * c0 + u_p * p(t) + u_s * s(t)) + v_n(t)
+
+    -> "u_c * c0 + u_p * p(t)" is Diffuse
+    -> "u_s * s(t)" is Specular
 
 where
     I0         scalar stationary luminance,
-    i(t)       zero-mean intensity fluctuation (motion / flicker / shadow),
-    u_c * c0   stationary skin reflection vector (DC color),
+    i(t)       zero-mean intensity fluctuation (flicker in the light),
+    u_c * c0   Subject's baseline skin color vector (DC baseline color),
     u_s        unit color vector of the light spectrum,
     s(t)       zero-mean specular fluctuation (induced by motion),
     u_p        relative pulsatile strengths in RGB (blood-volume pulse vector),
@@ -25,9 +28,16 @@ Design choices (see README for derivations):
 
 * `u_c` defaults to the standardized skin-tone vector `[0.77, 0.51, 0.38]`
   from CHROM (Wang/de Haan 2013), which is also referenced in this paper.
+
 * `u_s` defaults to `[1, 1, 1] / sqrt(3)` (white-light specular).
+
 * `u_p` defaults to the `u_pbv = [0.33, 0.77, 0.53]` blood-volume vector
   measured in [5], which respects the G > B > R pulsatile ranking.
+  Note: if we happen to multiply the values for the 'u_pbv' by 255, then
+  we will have the following color combination: 
+  Result: R: 196, G: 130, B: 97. Which is a a warm, "Tan/Peach" skin tone.
+  
+
 * The "worst-case noise = 10x pulse" knob from the prompt is implemented as
   a multiplier on the per-channel AC amplitude that the intensity and
   specular terms inject into the RGB trace, taking each component's color
